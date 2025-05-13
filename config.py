@@ -1,2 +1,7 @@
-HELIUS_API_KEY = "d50aeb91-428c-4a1d-babf-1099d259afef"
-HELIUS_BASE_URL = f"https://api.helius.xyz/v0"
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+HELIUS_API_KEY = os.getenv("HELIUS_API_KEY")
+HELIUS_BASE_URL = "https://api.helius.xyz/v0"

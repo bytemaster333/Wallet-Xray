@@ -1,0 +1,22 @@
+# 🔐 Secrets
+.env
+config.py
+
+# 🗃️ Databases
+*.db
+
+# 🧠 Python cache
+__pycache__/
+*.pyc
+
+# 🧪 Test, logs, temp
+*.log
+*.tmp
+
+# 💻 IDE/project files
+.idea/
+.vscode/
+
+# 📦 Streamlit & misc
+.streamlit/
+

@@ -1,7 +1,7 @@
-requests
-pandas
-numpy
-scikit-learn
 streamlit
-sqlite3
-tqdm
+pandas
+scikit-learn
+requests
+matplotlib
+python-dotenv
+plotly
