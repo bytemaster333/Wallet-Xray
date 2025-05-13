@@ -1,5 +1,3 @@
-# fetcher/fetch_wallets.py
-
 import requests
 import csv
 import sys

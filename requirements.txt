@@ -2,6 +2,6 @@ requests
 pandas
 numpy
 scikit-learn
-streamlit  # veya dash
-sqlite3    # (Python built-in)
+streamlit
+sqlite3
 tqdm
