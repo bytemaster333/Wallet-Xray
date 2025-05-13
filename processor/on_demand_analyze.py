@@ -4,12 +4,10 @@ import json
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import euclidean_distances
-
 from config import HELIUS_API_KEY
 
 RPC_URL = f"https://mainnet.helius-rpc.com/?api-key={HELIUS_API_KEY}"
 SIGNATURE_LIMIT = 10
-
 HEADERS = {"Content-Type": "application/json"}
 
 def get_signatures(wallet):
@@ -25,6 +23,7 @@ def get_signatures(wallet):
     resp = requests.post(RPC_URL, headers=HEADERS, json=payload)
     if resp.status_code == 200:
         return [tx["signature"] for tx in resp.json().get("result", [])]
+    print(f"[ERROR] Failed to fetch signatures: {resp.status_code} - {resp.text}")
     return []
 
 def get_transaction(sig):
@@ -40,21 +39,29 @@ def get_transaction(sig):
     resp = requests.post(RPC_URL, headers=HEADERS, json=payload)
     if resp.status_code == 200:
         return resp.json().get("result", {})
+    print(f"[ERROR] Failed to fetch transaction {sig}: {resp.status_code} - {resp.text}")
     return {}
 
 def extract_features_for_wallet(wallet):
+    print(f"[INFO] Extracting features for wallet: {wallet}")
     sigs = get_signatures(wallet)
+    print(f"[INFO] Found {len(sigs)} signatures")
+
     if not sigs:
-        return None  # No data
+        print("[WARN] No signatures found for wallet.")
+        return None
 
     txs = []
     for sig in sigs:
         tx = get_transaction(sig)
         if tx:
             txs.append(tx)
-        time.sleep(0.1)
+        else:
+            print(f"[WARN] Empty transaction for signature: {sig}")
+        time.sleep(0.15)  # Rate limit protection
 
     if not txs:
+        print("[ERROR] No valid transactions retrieved.")
         return None
 
     all_programs = []
@@ -66,27 +73,33 @@ def extract_features_for_wallet(wallet):
             keys = tx["transaction"]["message"]["accountKeys"]
             programs = [k["pubkey"] if isinstance(k, dict) else k for k in keys]
             all_programs.extend(programs)
-        except:
-            continue
+        except Exception as e:
+            print(f"[WARN] accountKeys extraction failed: {e}")
 
         try:
             transfers = tx["meta"]["postTokenBalances"]
             token_transfer_count += len(transfers)
-        except:
-            pass
+        except Exception as e:
+            print(f"[WARN] token transfer extraction failed: {e}")
 
         try:
             bt = tx.get("blockTime", 0)
             if bt:
                 block_times.append(bt)
-        except:
-            pass
+        except Exception as e:
+            print(f"[WARN] blockTime extraction failed: {e}")
+
+    if not all_programs or not block_times:
+        print("[ERROR] Critical feature data missing, skipping this wallet.")
+        return None
 
     tx_count = len(txs)
     unique_program_count = len(set(all_programs))
     active_days = len(set([pd.to_datetime(bt, unit="s").date() for bt in block_times]))
     time_diffs = [t2 - t1 for t1, t2 in zip(sorted(block_times), sorted(block_times)[1:])]
     avg_block_time_diff = sum(time_diffs) / len(time_diffs) if time_diffs else 0
+
+    print(f"[INFO] Feature extraction complete for wallet: {wallet}")
 
     return {
         "wallet": wallet,
